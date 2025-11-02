@@ -1,0 +1,25 @@
+# docker/base/Dockerfile
+FROM jupyter/datascience-notebook:python-3.11
+
+# Switch to root for apt installs if needed
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    graphviz tini curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Back to the jovyan user for pip
+USER ${NB_UID}
+
+# Copy requirements from repo root if present (fallback safe)
+COPY ../../requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt || true
+
+# Helpful extras commonly used across sessions
+RUN pip install --no-cache-dir \
+    sqlalchemy psycopg2-binary mlflow==2.14.1 \
+    great-expectations==0.18.15 \
+    dbt-postgres==1.8.6 \
+    duckdb==1.0.0 \
+    langchain==0.2.0 chromadb==0.5.3 openai==1.40.0
+
+WORKDIR /home/jovyan/work
